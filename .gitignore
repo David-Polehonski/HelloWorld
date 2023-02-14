@@ -1,0 +1,6 @@
+
+*.exe
+*.o
+*.uci_options
+
+.vscode/

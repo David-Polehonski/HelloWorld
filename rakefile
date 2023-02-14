@@ -1,0 +1,54 @@
+#	Convert all c files to object files
+require 'fileutils'
+require 'rake/clean'
+require 'rake/testtask'
+
+CLEAN.add('**/*.o');
+CLEAN.add('test/*.exe');
+CLEAN.add('src/*.exe');
+
+def gccBuild(execName, objectFiles)
+	print `gcc -o #{execName} #{objectFiles.join(' ')} -Wall -Wextra`
+end
+
+rule '.o' => ['.c'] do |t|
+  print `gcc -c -o #{t.name} #{t.source}`
+end
+
+# file "test/VectorTest" => ["src/Vector.o", "test/VectorTest.o"] do |t|
+# 	gccBuild(t.name, t.prerequisites);
+# end
+
+# file "test/PiecesTest" => ["src/Vector.o", "src/Pieces.o", "test/PiecesTest.o"] do |t|
+# 	gccBuild(t.name, t.prerequisites);
+# end
+
+# file "test/PositionTest" => ["src/Vector.o", "src/Pieces.o", "src/Move.o", "src/Position.o", "test/PositionTest.o"] do |t|
+# 	gccBuild(t.name, t.prerequisites);
+# end
+
+# task :old => [
+# 	"test/VectorTest",
+# 	"test/PiecesTest",
+# 	"test/PositionTest"
+# ] do |t|
+# 	#	Simple Compiled Tests:
+# 	print `#{'test/VectorTest'}`
+# 	print `#{'test/PiecesTest'}`
+# 	print `#{'test/PositionTest'}`
+
+# 	Rake::Task[:clean].invoke
+# end
+
+file "src/Main" => ["src/Vector.o", "src/Pieces.o", "src/Move.o", "src/Position.o", "src/UCI.o", "src/Main.o"] do |t|
+	gccBuild(t.name, t.prerequisites);
+end
+
+task :build => ["src/Main"] do |t|
+	FileUtils.mv('src/Main.exe', 'HelloWorld.exe');
+	Rake::Task[:clean].invoke
+end
+
+Rake::TestTask.new do |t|
+	t.pattern ='test/*Test.rb'
+end
