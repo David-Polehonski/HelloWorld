@@ -50,5 +50,5 @@ task :build => ["src/Main"] do |t|
 end
 
 Rake::TestTask.new do |t|
-	t.pattern ='test/*Test.rb'
+	t.test_files = FileList['test/*Test.rb'];
 end

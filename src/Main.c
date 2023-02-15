@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include <string.h>
 
@@ -30,6 +31,13 @@ static void appendCharacter(char **strPtr, char chr)
 	**strPtr = '\0'; // Terminate string?
 }
 
+void signalHandler(int signum)
+{
+	printf("\nSignal Recieved:%i\n", signum);
+	__running__ = false;
+	exit_code = signum;
+}
+
 void *engine(void *args)
 {
 	int *id = (int *)args;
@@ -37,6 +45,8 @@ void *engine(void *args)
 
 int main(void)
 {
+	signal(SIGINT, signalHandler);
+
 	char buffer[_BUFFER_SIZE_];
 	char *pos = buffer;
 
@@ -50,10 +60,7 @@ int main(void)
 
 		if (c == EOF || c == '\n')
 		{
-			char *token = buffer;
-			strtok(token, " ");
-
-			char *response = uciExecute(token);
+			char *response = uciExecute(buffer);
 			if (strlen(response) == 0)
 			{
 				__running__ = false;
@@ -61,7 +68,7 @@ int main(void)
 			}
 			else
 			{
-				printf(response);
+				printf("%s", response);
 			}
 			//	Reset buffer
 			pos = buffer;
