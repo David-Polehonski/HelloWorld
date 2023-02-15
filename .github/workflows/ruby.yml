@@ -30,5 +30,7 @@ jobs:
       with:
         ruby-version: 3.0
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - name: Run tests
+    - name: Build
       run: rake build
+    - name: Test
+      run: rake test

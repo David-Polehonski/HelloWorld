@@ -8,6 +8,7 @@ CLEAN.add('test/*.exe');
 CLEAN.add('src/*.exe');
 
 def gccBuild(execName, objectFiles)
+	print "Running gcc -o #{execName} #{objectFiles.join(' ')} -Wall -Wextra"
 	print `gcc -o #{execName} #{objectFiles.join(' ')} -Wall -Wextra`
 end
 
@@ -40,13 +41,19 @@ end
 # 	Rake::Task[:clean].invoke
 # end
 
-file "src/Main" => ["src/Vector.o", "src/Pieces.o", "src/Move.o", "src/Position.o", "src/UCI.o", "src/Main.o"] do |t|
+file "src/Main.exe" => ["src/Vector.o", "src/Pieces.o", "src/Move.o", "src/Position.o", "src/UCI.o", "src/Main.o"] do |t|
 	gccBuild(t.name, t.prerequisites);
 end
 
-task :build => ["src/Main"] do |t|
-	FileUtils.mv('src/Main.exe', 'HelloWorld.exe');
+task :build => ["src/Main.exe"] do |t|
+	puts "Building Main in #{Dir.pwd}"
+	if(File.exist? "src/Main.exe")
+		puts "Copying to HelloWorld.exe"
+		FileUtils.mv('src/Main.exe', 'HelloWorld.exe');
+	end
+	puts "Cleaning up..."
 	Rake::Task[:clean].invoke
+	puts "Done";
 end
 
 Rake::TestTask.new do |t|

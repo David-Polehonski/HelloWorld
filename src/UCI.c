@@ -14,8 +14,7 @@ void writeLog(char *logstring)
 	}
 	if (fp != NULL)
 	{
-		fprintf(fp, logstring);
-		fprintf(fp, "\n");
+		fprintf(fp, "%s\n", logstring);
 		fflush(fp);
 	}
 }
