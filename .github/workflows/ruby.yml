@@ -32,5 +32,7 @@ jobs:
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Build
       run: rake build
+    - name: Set Chmod
+      run: chmod +x HelloWorld.exe
     - name: Test
       run: rake test

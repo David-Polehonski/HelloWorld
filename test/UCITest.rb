@@ -15,10 +15,9 @@ class UCITest < Test::Unit::TestCase
 
   def test_uciRespondsWithID
     response = ""
-    if(File.exist? "HelloWorld.exe")
-      IO.popen("HelloWorld.exe", "w+", :external_encoding=>Encoding::ASCII_8BIT) do |engine|
-
-
+    executable = File.expand_path("./HelloWorld.exe");
+    if(File.exist? executable)
+      IO.popen(executable, "w+", :external_encoding=>Encoding::ASCII_8BIT) do |engine|
         engine.write("uci\n")
         engine.flush
         sleep(1)
