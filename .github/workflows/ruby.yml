@@ -9,7 +9,7 @@ name: Ruby
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev" ]
   pull_request:
     branches: [ "main" ]
 
@@ -20,10 +20,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        ruby-version: ['2.6', '2.7', '3.0']
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
@@ -32,7 +28,11 @@ jobs:
     # uses: ruby/setup-ruby@v1
       uses: ruby/setup-ruby@ee2113536afb7f793eed4ce60e8d3b26db912da4 # v1.127.0
       with:
-        ruby-version: ${{ matrix.ruby-version }}
+        ruby-version: 3.0
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - name: Run tests
+    - name: Build
       run: rake build
+    - name: Set Chmod
+      run: chmod +x HelloWorld.exe
+    - name: Test
+      run: rake test

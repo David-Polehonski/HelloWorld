@@ -1,5 +1,6 @@
 
 *.exe
+*.log
 *.o
 *.uci_options
 

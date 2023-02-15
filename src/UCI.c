@@ -5,6 +5,27 @@
 
 #include "UCI.h"
 
+FILE *fp;
+void writeLog(char *logstring)
+{
+	if (fp == NULL)
+	{
+		fp = fopen("hw.log", "a");
+	}
+	if (fp != NULL)
+	{
+		fprintf(fp, "%s\n", logstring);
+		fflush(fp);
+	}
+}
+
+void closeLog()
+{
+	if (fp != NULL)
+	{
+		fclose(fp);
+	}
+}
 /*
 	uci
 	Tell engine to use the uci (universal chess interface), this will be send once
@@ -17,6 +38,7 @@
 */
 char *uci(char *argTokens)
 {
+	writeLog("[uci]");
 	return "id name HelloWorld\nid author David Polehonski\nuciok\n";
 }
 
@@ -34,27 +56,36 @@ engine is calculating in which case the engine should also immediately answer
 with “readyok” without stopping the search.
 
 */
-char *isready(char *argTokens)
+char *isready(char *args)
 {
 	return "readyok\n";
 }
 
-char *quit(char *argTokens)
+char *quit(char *args)
 {
+	writeLog("[quit]");
+	closeLog();
 	return "";
 }
 
 static const char *command_names[] = {"uci", "isready", "quit"};
 char *(*command_functions[])(char *) = {uci, isready, quit};
 
-char *uciExecute(char *token)
+char *uciExecute(char *input)
 {
+	char log[256] = "[IO] - ";
+	strcat(log, input);
+	writeLog(log);
+
+	char *command = strtok(input, " ");
+	char *arguments = strtok(NULL, "\n");
+
 	int i;
 	for (i = 0; i < 2; i++)
 	{
-		if (strcmp(token, command_names[i]) == 0)
+		if (strcmp(command, command_names[i]) == 0)
 		{
-			return (*command_functions[i])(token);
+			return (*command_functions[i])(arguments);
 		}
 	}
 	return "";
