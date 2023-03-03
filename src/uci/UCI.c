@@ -3,29 +3,11 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "Log.h"
 #include "UCI.h"
 
-FILE *fp;
-void writeLog(char *logstring)
-{
-	if (fp == NULL)
-	{
-		fp = fopen("hw.log", "a");
-	}
-	if (fp != NULL)
-	{
-		fprintf(fp, "%s\n", logstring);
-		fflush(fp);
-	}
-}
+log_t *commandLog;
 
-void closeLog()
-{
-	if (fp != NULL)
-	{
-		fclose(fp);
-	}
-}
 /*
 	uci
 	Tell engine to use the uci (universal chess interface), this will be send once
@@ -38,7 +20,7 @@ void closeLog()
 */
 char *uci(char *argTokens)
 {
-	writeLog("[uci]");
+	logWrite(commandLog, "[uci]");
 	return "id name HelloWorld\nid author David Polehonski\nuciok\n";
 }
 
@@ -63,8 +45,8 @@ char *isready(char *args)
 
 char *quit(char *args)
 {
-	writeLog("[quit]");
-	closeLog();
+	logWrite(commandLog, "[quit]");
+	logClose(commandLog);
 	return "";
 }
 
@@ -73,9 +55,13 @@ char *(*command_functions[])(char *) = {uci, isready, quit};
 
 char *uciExecute(char *input)
 {
-	char log[256] = "[IO] - ";
-	strcat(log, input);
-	writeLog(log);
+	if (commandLog == NULL)
+	{
+		commandLog = logOpen("commands.log");
+	}
+	char text[256] = "[IO] - ";
+	strcat(text, input);
+	logWrite(commandLog, text);
 
 	char *command = strtok(input, " ");
 	char *arguments = strtok(NULL, "\n");

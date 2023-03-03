@@ -1,13 +1,3 @@
-/*
- ============================================================================
- Name        : HelloWorld.c
- Author      :
- Version     :
- Copyright   :
- Description : Hello World in C, Ansi-style
- ============================================================================
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -17,12 +7,28 @@
 
 #include <string.h>
 
-#include "Position.h"
-#include "UCI.h"
+#include "uci/UCI.h"
+
+#ifdef __MINGW32__
+#include <fcntl.h>
+#define pipe(fds) _pipe(fds, 1024, _O_BINARY)
+#endif
+
+#ifdef __WIN32__
+#define lastError() WSAGetLastError()
+#else
+#define lastError() errno
+#endif
 
 static volatile bool __running__ = true;
-static volatile int exit_code = 0;
+static volatile int __exit_code__ = 0;
+
 static const int _BUFFER_SIZE_ = 256;
+
+static int ipcIn;
+static int ipcOut;
+
+static FILE *ipcWrite;
 
 static void appendCharacter(char **strPtr, char chr)
 {
@@ -33,44 +39,38 @@ static void appendCharacter(char **strPtr, char chr)
 
 void signalHandler(int signum)
 {
-	printf("\nSignal Recieved:%i\n", signum);
+	fprintf(ipcWrite, "Signal Recieved:%i\n", signum);
+	fflush(ipcWrite);
 	__running__ = false;
-	exit_code = signum;
+	__exit_code__ = signum;
 }
 
-void *engine(void *args)
+void *uci_thread(void *args)
 {
 	int *id = (int *)args;
-}
-
-int main(void)
-{
-	signal(SIGINT, signalHandler);
-
 	char buffer[_BUFFER_SIZE_];
 	char *pos = buffer;
 
-	pthread_t engine_id;
-	pthread_create(&engine_id, NULL, engine, NULL);
-
-	setbuf(stdout, NULL);
-	do
+	while (1)
 	{
 		char c = fgetc(stdin);
-
 		if (c == EOF || c == '\n')
 		{
 			char *response = uciExecute(buffer);
 			if (strlen(response) == 0)
 			{
+				fprintf(ipcWrite, "%s", "quitting...\n");
+				fflush(ipcWrite);
 				__running__ = false;
-				exit_code = 0;
+				pthread_exit(0);
 			}
 			else
 			{
-				printf("%s", response);
+				fprintf(ipcWrite, "%s", response);
+				fflush(ipcWrite);
 			}
 			//	Reset buffer
+			memset(buffer, '\0', sizeof(buffer));
 			pos = buffer;
 		}
 		else
@@ -81,9 +81,92 @@ int main(void)
 				pos = buffer;
 			}
 		}
+	}
+}
+
+struct listener
+{
+	unsigned int *flagset;
+	unsigned int flagmask;
+	FILE *stream;
+};
+typedef struct listener listener_t;
+
+void *peek(void *args)
+{
+	int c;
+	listener_t *l = (listener_t *)args;
+
+	FILE *stream = l->stream;
+
+	c = fgetc(stream);
+	ungetc(c, stream);
+	*l->flagset = (*l->flagset) ^ l->flagmask;
+}
+
+unsigned int listen(FILE *stream)
+{
+	unsigned int flagset = 0;
+
+	listener_t *args = (listener_t *)malloc(sizeof(listener_t));
+	args->flagset = &flagset;
+	args->flagmask = 1;
+	args->stream = stream;
+
+	pthread_t threadId;
+	int i = pthread_create(&threadId, NULL, peek, args);
+	if (i != 0)
+	{
+		exit(i);
+	}
+	do
+	{
+		sleep(0.1);
+	} while (flagset == 0);
+
+	free(args);
+	return flagset;
+}
+
+int main(void)
+{
+	signal(SIGINT, signalHandler);
+
+	/* Create the pipe. */
+	int internalPipe[2];
+	if (pipe(internalPipe))
+	{
+		return EXIT_FAILURE;
+	}
+
+	ipcIn = internalPipe[0];
+	ipcOut = internalPipe[1];
+
+	setbuf(stdin, NULL);
+	setbuf(stdout, NULL);
+
+	pthread_t uci_id;
+	pthread_create(&uci_id, NULL, uci_thread, NULL);
+
+	FILE *stream = fdopen(ipcIn, "r");
+	ipcWrite = fdopen(ipcOut, "w");
+	do
+	{
+		unsigned int result = listen(stream);
+		if (result > 0)
+		{
+			char buffer[_BUFFER_SIZE_];
+			int pos = 0;
+			do
+			{
+				buffer[pos] = getc(stream);
+			} while (buffer[pos++] != '\n' && pos < _BUFFER_SIZE_);
+			buffer[pos] = '\0';
+			printf("%s", buffer);
+		}
 	} while (__running__);
 
 	pthread_exit(NULL);
 
-	return exit_code;
+	return __exit_code__;
 }
