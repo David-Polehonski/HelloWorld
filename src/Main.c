@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <semaphore.h>
 
 #include <string.h>
 
@@ -88,6 +89,7 @@ struct listener
 {
 	unsigned int *flagset;
 	unsigned int flagmask;
+	sem_t lock;
 	FILE *stream;
 };
 typedef struct listener listener_t;
@@ -101,16 +103,21 @@ void *peek(void *args)
 
 	c = fgetc(stream);
 	ungetc(c, stream);
+
 	*l->flagset = (*l->flagset) ^ l->flagmask;
+	sem_post(l->lock);
 }
 
 unsigned int listen(FILE *stream)
 {
 	unsigned int flagset = 0;
+	sem_t sem;
+	sem_init(&sem, 0, 0);
 
 	listener_t *args = (listener_t *)malloc(sizeof(listener_t));
 	args->flagset = &flagset;
 	args->flagmask = 1;
+	args->lock = &sem;
 	args->stream = stream;
 
 	pthread_t threadId;
@@ -119,12 +126,12 @@ unsigned int listen(FILE *stream)
 	{
 		exit(i);
 	}
-	do
-	{
-		sleep(0.1);
-	} while (flagset == 0);
+
+	sem_wait(&sem);
+	sem_destroy(&sem);
 
 	free(args);
+
 	return flagset;
 }
 
