@@ -9,11 +9,11 @@ CLEAN.add('src/*.exe');
 
 def gccBuild(execName, objectFiles)
 	puts "Running gcc -o #{execName} #{objectFiles.join(' ')} -Wall -Wextra"
-	print `gcc -g -o #{execName} #{objectFiles.join(' ')} -Wall -Wextra`
+	print `gcc -pthread -g -o #{execName} #{objectFiles.join(' ')} -Wall -Wextra`
 end
 
 rule '.o' => ['.c'] do |t|
-  print `gcc -g -c -o #{t.name} #{t.source}`
+  print `gcc -pthread -g -c -o #{t.name} #{t.source}`
 end
 
 # file "test/VectorTest" => ["src/Vector.o", "test/VectorTest.o"] do |t|
