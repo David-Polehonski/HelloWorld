@@ -89,7 +89,7 @@ struct listener
 {
 	unsigned int *flagset;
 	unsigned int flagmask;
-	sem_t lock;
+	sem_t *lock;
 	FILE *stream;
 };
 typedef struct listener listener_t;
