@@ -2,17 +2,6 @@ require 'test/unit'
 
 class UCITest < Test::Unit::TestCase
 
-  def readline_nonblock
-    buffer = ""
-    buffer << read_nonblock(1) while buffer[-1] != "\n"
-
-    buffer
-  rescue IO::WaitReadable => blocking
-    raise blocking if buffer.empty?
-
-    buffer
-  end
-
   def test_uciRespondsWithID
     response = ""
     executable = File.expand_path("./HelloWorld.exe");
